@@ -45,12 +45,12 @@ public class Solver {
 		final List<Move> path = Lists.newArrayList();
 		final List<List<Move>> completedPaths = Lists.newArrayList();
 
-		final SolverThread solverThread = new SolverThread(grid, visitedStates, path, completedPaths, stopOnFirstCompletedPath);
-		solverThread.start();
+		final SolverThreadExecutor solverThreadExecutor = new SolverThreadExecutor(grid, visitedStates, path, completedPaths, stopOnFirstCompletedPath);
+		solverThreadExecutor.run();
 		try {
-			solverThread.join();
+			solverThreadExecutor.join();
 		} catch(final InterruptedException e) {
-			System.out.println("Solver thread interrupted: " + e);
+			System.out.println("Solver thread executor interrupted: " + e);
 			System.exit(-1);
 		}
 
@@ -63,7 +63,9 @@ public class Solver {
 
 		if(!stopOnFirstCompletedPath || completedPaths.isEmpty()) {
 			if (grid.isComplete()) {
-				completedPaths.add(path);
+				synchronized (completedPaths) {
+					completedPaths.add(path);
+				}
 
 			} else {
 				final List<Move> validMoves = grid.getValidMoves();
@@ -86,23 +88,31 @@ public class Solver {
 	                                 final Move move, final boolean stopOnFirstCompletedPath) {
 
 		final SolitaireGrid newGrid = grid.move(move);
-		if (!visitedStates.contains(newGrid)) {
-			final List<Move> newPath = Lists.newArrayList(path);
-			newPath.add(move);
-			visitedStates.add(newGrid);
+		final List<Move> newPath;
 
+		synchronized (visitedStates) {
+			if (!visitedStates.contains(newGrid)) {
+				newPath = Lists.newArrayList(path);
+				newPath.add(move);
+				visitedStates.add(newGrid);
+			} else {
+				newPath=null;
+			}
+		}
+
+		if(newPath!=null) {
 			solve(newGrid, visitedStates, newPath, completedPaths, stopOnFirstCompletedPath);
 		}
 	}
 
-	private class SolverThread extends Thread {
+	private class SolverThreadExecutor extends Thread {
 		private SolitaireGrid initialGrid;
 		private Set<SolitaireGrid> visitedStates;
 		private List<Move> initialPath;
 		private List<List<Move>> completedPaths;
 		private boolean stopOnFirstCompletedPath;
 
-		public SolverThread(final SolitaireGrid initialGrid, final Set<SolitaireGrid> visitedStates, final List<Move> initialPath, final List<List<Move>> completedPaths,
+		public SolverThreadExecutor(final SolitaireGrid initialGrid, final Set<SolitaireGrid> visitedStates, final List<Move> initialPath, final List<List<Move>> completedPaths,
 				final boolean stopOnFirstCompletedPath) {
 			this.initialGrid = initialGrid;
 			this.visitedStates = visitedStates;
@@ -113,7 +123,21 @@ public class Solver {
 
 		@Override
 		public void run() {
-			solve(initialGrid, visitedStates, initialPath, completedPaths, stopOnFirstCompletedPath);
+			final SolverThread solverThread = new SolverThread();
+			solverThread.start();
+			try {
+				solverThread.join();
+			} catch(final InterruptedException e) {
+				System.out.println("Solver thread interrupted: " + e);
+				System.exit(-1);
+			}
+		}
+
+		private class SolverThread extends Thread {
+			@Override
+			public void run() {
+				solve(initialGrid, visitedStates, initialPath, completedPaths, stopOnFirstCompletedPath);
+			}
 		}
 	}
 }

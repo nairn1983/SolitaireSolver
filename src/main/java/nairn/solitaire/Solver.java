@@ -1,17 +1,19 @@
 package nairn.solitaire;
 
+import java.util.List;
+import java.util.Set;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import nairn.solitaire.grid.SolitaireGrid;
 import nairn.solitaire.move.Move;
 
-import java.util.List;
-import java.util.Set;
-
-public final class Solver {
+public class Solver {
 
 	public static void main(final String[] args) {
-		final List<List<Move>> solutions = solve(2, true);
+		final Solver solver = new Solver();
+
+		final List<List<Move>> solutions = solver.solve(2, true);
 		final int numSolutions = solutions.size();
 
 		final StringBuilder sb = new StringBuilder();
@@ -37,17 +39,25 @@ public final class Solver {
 		}
 	}
 
-	public static List<List<Move>> solve(final int armLength, final boolean stopOnFirstCompletedPath) {
+	public List<List<Move>> solve(final int armLength, final boolean stopOnFirstCompletedPath) {
 		final SolitaireGrid grid = new SolitaireGrid(armLength);
 		final Set<SolitaireGrid> visitedStates = Sets.newHashSet(grid);
 		final List<Move> path = Lists.newArrayList();
 		final List<List<Move>> completedPaths = Lists.newArrayList();
 
-		solve(grid, visitedStates, path, completedPaths, stopOnFirstCompletedPath);
+		final SolverThread solverThread = new SolverThread(grid, visitedStates, path, completedPaths, stopOnFirstCompletedPath);
+		solverThread.start();
+		try {
+			solverThread.join();
+		} catch(final InterruptedException e) {
+			System.out.println("Solver thread interrupted: " + e);
+			System.exit(-1);
+		}
+
 		return completedPaths;
 	}
 
-	private static void solve(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
+	private void solve(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
 	                          final List<Move> path, final List<List<Move>> completedPaths,
 	                          final boolean stopOnFirstCompletedPath) {
 
@@ -62,7 +72,7 @@ public final class Solver {
 		}
 	}
 
-	private static void attemptMoves(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
+	private void attemptMoves(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
 	                                 final List<Move> path, final List<List<Move>> completedPaths,
 	                                 final List<Move> movesToAttempt, final boolean stopOnFirstCompletedPath) {
 
@@ -71,7 +81,7 @@ public final class Solver {
 		}
 	}
 
-	private static void solveForMove(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
+	private void solveForMove(final SolitaireGrid grid, final Set<SolitaireGrid> visitedStates,
 	                                 final List<Move> path, final List<List<Move>> completedPaths,
 	                                 final Move move, final boolean stopOnFirstCompletedPath) {
 
@@ -82,6 +92,28 @@ public final class Solver {
 			visitedStates.add(newGrid);
 
 			solve(newGrid, visitedStates, newPath, completedPaths, stopOnFirstCompletedPath);
+		}
+	}
+
+	private class SolverThread extends Thread {
+		private SolitaireGrid initialGrid;
+		private Set<SolitaireGrid> visitedStates;
+		private List<Move> initialPath;
+		private List<List<Move>> completedPaths;
+		private boolean stopOnFirstCompletedPath;
+
+		public SolverThread(final SolitaireGrid initialGrid, final Set<SolitaireGrid> visitedStates, final List<Move> initialPath, final List<List<Move>> completedPaths,
+				final boolean stopOnFirstCompletedPath) {
+			this.initialGrid = initialGrid;
+			this.visitedStates = visitedStates;
+			this.initialPath = initialPath;
+			this.completedPaths = completedPaths;
+			this.stopOnFirstCompletedPath = stopOnFirstCompletedPath;
+		}
+
+		@Override
+		public void run() {
+			solve(initialGrid, visitedStates, initialPath, completedPaths, stopOnFirstCompletedPath);
 		}
 	}
 }

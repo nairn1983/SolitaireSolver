@@ -3,12 +3,17 @@ package nairn.solitaire;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import nairn.solitaire.grid.SolitaireGrid;
 import nairn.solitaire.move.Move;
 
 public class Solver {
+	private static final XLogger logger = XLoggerFactory.getXLogger(Solver.class);
+
 	private static final int MAX_NUM_ACTIVE_SOLVER_THREADS = 5;
 	private final Set<SolveForMoveThread> activeSolverThreads = Sets.newHashSet();
 	private final List<List<Move>> completedPaths = Lists.newArrayList();
@@ -16,10 +21,13 @@ public class Solver {
 	private final boolean stopOnFirstCompletedPath;
 
 	public Solver(final boolean stopOnFirstCompletedPath) {
+		logger.debug("Creating Solver object; stopOnFirstCompletedPath = {}", stopOnFirstCompletedPath);
 		this.stopOnFirstCompletedPath = stopOnFirstCompletedPath;
 	}
 
 	public static void main(final String[] args) {
+		logger.info("Starting Solver.main");
+
 		final Solver solver = new Solver(true);
 
 		solver.solve(2);

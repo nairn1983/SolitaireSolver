@@ -1,15 +1,14 @@
 package nairn.solitaire;
 
-import java.util.List;
-import java.util.Set;
-
-import org.slf4j.ext.XLogger;
-import org.slf4j.ext.XLoggerFactory;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import nairn.solitaire.grid.SolitaireGrid;
 import nairn.solitaire.move.Move;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
+
+import java.util.List;
+import java.util.Set;
 
 public class Solver {
 	private static final XLogger logger = XLoggerFactory.getXLogger(Solver.class);
@@ -20,7 +19,7 @@ public class Solver {
 	private final Set<SolitaireGrid> visitedStates = Sets.newHashSet();
 	private final boolean stopOnFirstCompletedPath;
 
-	public Solver(final boolean stopOnFirstCompletedPath) {
+	private Solver(final boolean stopOnFirstCompletedPath) {
 		logger.debug("Creating Solver object; stopOnFirstCompletedPath = {}", stopOnFirstCompletedPath);
 		this.stopOnFirstCompletedPath = stopOnFirstCompletedPath;
 	}
@@ -57,7 +56,7 @@ public class Solver {
 		}
 	}
 
-	public void solve(final int armLength) {
+	private void solve(final int armLength) {
 		final SolitaireGrid grid = new SolitaireGrid(armLength);
 		visitedStates.add(grid);
 		final List<Move> path = Lists.newArrayList();
@@ -151,7 +150,7 @@ public class Solver {
 		private List<Move> initialPath;
 		private Move initialMove;
 
-		public SolveForMoveThread(final SolitaireGrid initialGrid, final List<Move> initialPath, final Move initialMove) {
+		SolveForMoveThread(final SolitaireGrid initialGrid, final List<Move> initialPath, final Move initialMove) {
 			this.initialGrid = initialGrid;
 			this.initialPath = initialPath;
 			this.initialMove = initialMove;

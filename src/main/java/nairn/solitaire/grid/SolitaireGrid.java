@@ -15,12 +15,12 @@ public class SolitaireGrid extends SquareGrid {
 		initialiseSolitaireGrid();
 	}
 
-	private SolitaireGrid(final SolitaireGrid grid) {
+	public SolitaireGrid(final SolitaireGrid grid) {
 		super(grid);
 		this.armLength = (width - 3) / 2;
 	}
 
-	SolitaireGrid move(final int x, final int y, final Direction direction) {
+	public SolitaireGrid move(final int x, final int y, final Direction direction) {
 		final SolitaireGrid updatedGrid;
 
 		if(moveIsValid(x, y, direction)) {
@@ -43,7 +43,7 @@ public class SolitaireGrid extends SquareGrid {
 		return move(move.getX(), move.getY(), move.getDirection());
 	}
 
-	boolean moveIsValid(final int x, final int y, final Direction direction) {
+	public boolean moveIsValid(final int x, final int y, final Direction direction) {
 		final boolean moveIsValid;
 
 		if (x < 0 || x >= width || y < 0 || y >= width) {
@@ -74,11 +74,7 @@ public class SolitaireGrid extends SquareGrid {
 		return moveIsValid;
 	}
 
-	boolean moveIsValid(final Move move) {
-	    return moveIsValid(move.getX(), move.getY(), move.getDirection());
-    }
-
-	boolean hasValidMove(final int x, final int y) {
+	public boolean hasValidMove(final int x, final int y) {
 		return moveIsValid(x,y,Direction.UP) || moveIsValid(x,y,Direction.DOWN) || moveIsValid(x,y,Direction.LEFT) ||
 				moveIsValid(x,y,Direction.RIGHT);
 	}
@@ -116,7 +112,7 @@ public class SolitaireGrid extends SquareGrid {
 		return isComplete;
 	}
 
-	boolean hasValidMoves() {
+	public boolean hasValidMoves() {
 		boolean hasValidMoves = false;
 
 		RowLoop: for(int y = 0; y < width; y++) {
@@ -133,7 +129,7 @@ public class SolitaireGrid extends SquareGrid {
 	public List<Move> getValidMoves() {
 		final List<Move> validMoves = Lists.newArrayList();
 
-		for(int y = 0; y < width; y++) {
+		RowLoop: for(int y = 0; y < width; y++) {
 			for(int x = 0; x < width; x++) {
 				validMoves.addAll(createValidMoves(x,y));
 			}
@@ -170,7 +166,7 @@ public class SolitaireGrid extends SquareGrid {
 		return move;
 	}
 
-	int countPegs() {
+	public int countPegs() {
 		int numberOfPegs = 0;
 
 		for(int y = 0; y < width; y++) {
@@ -259,8 +255,7 @@ public class SolitaireGrid extends SquareGrid {
 		for (int x = 0; x < y; x++) {
 			set(x, y, true);
 		}
-        //noinspection SuspiciousNameCombination -- this is valid: the centre of the grid is empty to begin with
-        set(y, y, false);
+		set(y, y, false);
 		for (int x = y + 1; x < width; x++) {
 			set(x, y, true);
 		}
@@ -276,7 +271,12 @@ public class SolitaireGrid extends SquareGrid {
 		}
 
 		final SolitaireGrid that = (SolitaireGrid) o;
-		return armLength == that.armLength && toString().equals(that.toString());
+
+		if (armLength != that.armLength) {
+			return false;
+		}
+
+		return this.toString().equals(that.toString());
 	}
 
 	@Override

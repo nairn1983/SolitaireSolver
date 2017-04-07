@@ -31,16 +31,8 @@ public class Solver {
 
 		solver.solve(2);
 		final List<List<Move>> solutions = solver.getCompletedPaths();
-		final int numSolutions = solutions.size();
 
-		final StringBuilder sb = new StringBuilder();
-		sb.append(numSolutions);
-		sb.append(" solution");
-		if (numSolutions != 1) {
-			sb.append("s");
-		}
-		sb.append(" found:\n");
-		System.out.println(sb.toString());
+        System.out.println(solver.describeNumberOfSolutions(solutions) + ":\n");
 
 		for (final List<Move> moves : solutions) {
 			boolean firstElement = true;
@@ -55,6 +47,18 @@ public class Solver {
 			System.out.println("\n");
 		}
 	}
+
+	private String describeNumberOfSolutions(final List<List<Move>> solutions) {
+	    final int numSolutions = solutions.size();
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append(numSolutions);
+        sb.append(" solution");
+        sb.append(numSolutions != 1 ? "s" : "");
+        sb.append(" found");
+
+        return sb.toString();
+    }
 
 	private void solve(final int armLength) {
 		final SolitaireGrid grid = new SolitaireGrid(armLength);

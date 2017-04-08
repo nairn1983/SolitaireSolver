@@ -1,17 +1,21 @@
 package nairn.solitaire;
 
 import com.google.common.collect.Lists;
-import nairn.solitaire.grid.SolitaireGrid;
 import nairn.solitaire.grid.SolitaireGridWithMoves;
 import nairn.solitaire.move.Move;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.lang.Math.min;
 
 public class Solver {
     private static final XLogger logger = XLoggerFactory.getXLogger(Solver.class);
-    
+
     private final boolean stopOnFirstCompletedPath;
 
     private Solver(final boolean stopOnFirstCompletedPath) {
@@ -47,27 +51,30 @@ public class Solver {
 
     private List<List<Move>> solve(final SolitaireGridWithMoves initialState, final boolean stopOnFirstCompletedPath) {
         List<SolitaireGridWithMoves> pathQueue = Lists.newArrayList(initialState);
-        final List<List<Move>> completedPaths = Lists.newArrayList();
+        final List<List<Move>> completedPaths = Collections.synchronizedList(Lists.newArrayList());
+        final int pathsToProcessEachStep = 100;
 
         while (!pathQueue.isEmpty()) {
-            final List<SolitaireGridWithMoves> newPathQueue = Lists.newArrayList();
+            final int numPathsToProcess = min(pathsToProcessEachStep, pathQueue.size());
+            final List<SolitaireGridWithMoves> pathsToProcess = pathQueue.subList(0, numPathsToProcess);
 
-            final SolitaireGridWithMoves firstPath = pathQueue.get(0);
-            final SolitaireGrid grid = firstPath.getGrid();
-            if (grid.isComplete()) {
-                completedPaths.add(firstPath.getMoves());
-                if (stopOnFirstCompletedPath) {
-                    return completedPaths;
-                }
-            } else {
-                final List<Move> validMoves = grid.getValidMoves();
-                for (final Move validMove : validMoves) {
-                    final SolitaireGridWithMoves nextPath = firstPath.move(validMove);
-                    newPathQueue.add(nextPath);
-                }
+            final List<SolitaireGridWithMoves> processedPaths = pathsToProcess.parallelStream().flatMap(path ->
+                path.getGrid().getValidMoves().parallelStream().map(move -> {
+                    final SolitaireGridWithMoves nextPath = path.move(move);
+                    if (nextPath.getGrid().isComplete()) {
+                        completedPaths.add(nextPath.getMoves());
+                    }
+                    return nextPath;
+                })
+            ).collect(Collectors.toList());
+
+            if (stopOnFirstCompletedPath && !completedPaths.isEmpty()) {
+                return completedPaths.subList(0, 1);
             }
-            newPathQueue.addAll(pathQueue.subList(1, pathQueue.size()));
-            pathQueue = newPathQueue;
+
+            final List<SolitaireGridWithMoves> unprocessedPaths = pathQueue.subList(numPathsToProcess, pathQueue.size());
+            pathQueue = Lists.newArrayList();
+            Stream.of(processedPaths, unprocessedPaths).forEach(pathQueue::addAll);
         }
         return completedPaths;
     }
